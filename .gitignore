@@ -1,2 +1,3 @@
 ~$*.doc*
 /modelsim/*
+!/modelsim/singleCycleMIPS.mpf
