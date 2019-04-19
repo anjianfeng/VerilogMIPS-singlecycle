@@ -1,3 +1,5 @@
+// Note: combitional logic
+
 `include "ctrl_encode_def.v"
 module alu(a, b, aluop, c, compare);
            

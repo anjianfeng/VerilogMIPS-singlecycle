@@ -1,124 +1,123 @@
-module mips( clk, rst, pc, aluout, imem_addr, imem_dout, dmem_addr, dmem_din, dmem_be, dmem_wren, dmem_dout );
+// top module of MIPS
+
+`include "ctrl_encode_def.v"
+`include "instruction_def.v"
+
+module mips( clk, rst, imem_addr, imem_dout, dmem_addr, dmem_din, dmem_be, dmem_wren, dmem_dout );
    // clock and reset
    input   clk;
    input   rst;
 
    // instruction interface
-   output [11:0] imem_addr; 
+   output [31:0] imem_addr; 
    input  [31:0] imem_dout;
 
    // data memory interface
-   output  [11:2] dmem_addr;
+   output  [31:0] dmem_addr;
    output  [31:0] dmem_din;
    output  [3:0]  dmem_be;   
    output         dmem_wren;
    input  [31:0]  dmem_dout;
-   
-   wire 		     RFWr;
-   wire 		     DMWr;
-   wire 		     PCWr;
-   wire 		     IRWr;
-   wire [1:0]  EXTOp;
-   wire [1:0]  ALUOp;
-   wire [1:0]  NPCOp;
-   wire [1:0]  GPRSel;
-   wire [1:0]  WDSel;
-   wire 		     BSel;
-   wire 		     Zero;
-   wire [29:0] PC, NPC;
-   wire [31:0] im_dout, dm_dout;
-   wire [31:0] DR_out;
-   wire [31:0] instr;
-   wire [4:0]  rs;
-   wire [4:0]  rt;
-   wire [4:0]  rd;
-   wire [5:0]  Op;
-   wire [5:0]  Funct;
-   wire [15:0] Imm16; 
-   wire [31:0] Imm32;
-   wire [25:0] IMM;
-   wire [4:0]  A3;
-   wire [31:0] WD;
-   wire [31:0] RD1, RD1_r, RD2, RD2_r;
-   wire [31:0] B, C, C_r;
-   
-   assign Op = instr[31:26];
-   assign Funct = instr[5:0];
-   assign rs = instr[25:21];
-   assign rt = instr[20:16];
-   assign rd = instr[15:11];
-   assign Imm16 = instr[15:0];
-   assign IMM = instr[25:0];
-   
-   
-   ctrl U_CTRL (
-      .clk(clk),	.rst(rst), .Zero(Zero), .Op(Op),  .Funct(Funct),
-      .RFWr(RFWr),   .DMWr(DMWr),   .PCWr(PCWr),   .IRWr(IRWr),
-      .EXTOp(EXTOp), .ALUOp(ALUOp), .NPCOp(NPCOp), .GPRSel(GPRSel),
-      .WDSel(WDSel), .BSel(BSel)
-   );
-   
-   PC U_PC (
-      .clk(clk), .rst(rst), .PCWr(PCWr), .NPC(NPC), .PC(PC)
-   ); 
-   
-   NPC U_NPC ( 
-      .PC(PC), .NPCOp(NPCOp), .IMM(IMM), .NPC(NPC)
-   );
-   
-   im_4k U_IM ( 
-      .addr(PC[9:0]) , .dout(im_dout)
-   );
-   
-   IR U_IR ( 
-      .clk(clk), .rst(rst), .IRWr(IRWr), .im_dout(im_dout), .instr(instr)
-   );
-   
-   RF U_RF (
-      .A1(rs), .A2(rt), .A3(A3), .WD(WD), .clk(clk), 
-      .RFWr(RFWr), .RD1(RD1), .RD2(RD2)
-   );
-   
-   mux4 #(5) U_MUX4_GPR_A3 (
-      .d0(rd), .d1(rt), .d2(5'd31), .d3(/*undefine*/5'd0),
-      .s(GPRSel), .y(A3)
+
+   // decode signals
+   wire [5:0] opcode;
+   wire [5:0] func;
+   wire [4:0] rs;
+   wire [4:0] rt;
+   wire [4:0] rd;
+   wire [15:0] imm16;
+   wire [25:0] imm26;
+   reg  [25:0] imm32;
+
+   // regfile connection
+   wire  [4:0]  rw;
+   wire  [31:0] busw;
+   wire [31:0]  busa, busb;
+   reg          regwr;
+
+   // ALU connection
+   wire [31:0] alu_b;
+   reg [4:0]  aluctr;
+   wire [31:0] aluout;
+   wire        compare;
+
+
+   regfile U_RF (
+      .clk(clk), .rst(rst), .rw(rw), .ra(rs), .rb(rt), 
+      .busa(busa), .busb(busb), .busw(busw), .regwr(regwr)
    );
 
-   mux4 #(32) U_MUX4_GPR_WD (
-      .d0(C_r), .d1(DR_out), .d2({PC,2'b00}), .d3(/*undefine*/32'd0),
-      .s(WDSel), .y(WD)
-   );
-   
-   flopr #(32) U_RD1_Reg (
-      .clk(clk), .rst(rst), .d(RD1), .q(RD1_r)
-   );
-   
-   flopr #(32) U_RD2_Reg (
-      .clk(clk), .rst(rst), .d(RD2), .q(RD2_r)
-   );
-   
-   EXT U_EXT ( 
-      .Imm16(Imm16), .EXTOp(EXTOp), .Imm32(Imm32) 
-   );
-   
-   mux2 #(32) U_MUX_ALU_B (
-      .d0(RD2_r), .d1(Imm32), .s(BSel) , .y(B)
-   );
-   
    alu U_ALU ( 
-      .A(RD1_r), .B(B), .ALUOp(ALUOp), .C(C), .Zero(Zero)
+      .a(busa), .b(alu_b), .c(aluout), .aluop(aluctr), .compare(compare)
    );
-   
-   flopr #(32) U_ALUOut (
-      .clk(clk), .rst(rst), .d(C), .q(C_r)
-   );
-   
-   dm_4k U_DM ( 
-      .addr(C_r[11:2]), .din(RD2_r), .DMWr(DMWr), .clk(clk), .dout(dm_dout)
-   );
-   
-   flopr #(32) U_DR (
-      .clk(clk), .rst(rst), .d(dm_dout), .q(DR_out)
-   );
+
+
+   // Only one register in single cycle MIPS
+   reg [31:0] pc;
+
+   // Other Control Point
+   reg regdst;
+   reg  [1:0]  extop;
+   reg alusrc;
+   reg memwr;
+   reg memtoreg;
+
+
+   // Data path   
+   assign opcode = imem_dout[31:26];
+   assign func = imem_dout[5:0];
+   assign rs = imem_dout[25:21];
+   assign rt = imem_dout[20:16];
+   assign rd = imem_dout[15:11];
+   assign imm16 = imem_dout[15:0];
+   assign imm26 = imem_dout[25:0];
+   assign dmem_addr = aluout;
+   assign dmem_din = busb;
+   assign imem_addr = pc;
+
+   // PC
+   always @(posedge clk) begin
+      if (rst)
+         pc<=32'b0;
+      else begin
+         pc<=pc+4;
+         if ((opcode==`INSTR_BEQ_OP)&&(compare==1'b1))
+            pc<=pc+4+imm32;
+         if (opcode==`INSTR_J_OP)
+            pc<={pc[31:28],imm26,2'b00};
+      end
+   end // end always
+
+   // Extender
+   always @(*) begin
+      imm32 <= {{16{imm16[15]}}, imm16};
+      if (opcode==`INSTR_ORI_OP)
+         imm32 <= {{16{1'b0}}, imm16};
+   end
+
+   // all MUX here
+   assign alu_b = alusrc ? imm32:busb;
+   assign rw = regdst ? rd: rt;
+   assign busw = memtoreg ? dmem_dout:aluout;
+
+
+   always @(*) begin
+      // set default value
+      {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b0, 1'b0, `EXT_ZERO, 1'b0, `ALUOp_ADDU, 1'b0, 1'b0};
+      case(opcode)
+         `INSTR_RTYPE_OP: begin
+            case (func)
+               `INSTR_ADDU_FUNCT: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
+               
+               `INSTR_SUBU_FUNCT: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
+            endcase
+         end
+         `INSTR_ORI_OP: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b0, `EXT_ZERO, 1'b1, `ALUOp_OR, 1'b1, 1'b0};
+         `INSTR_LW_OP:  {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
+         `INSTR_SW_OP:  {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
+         `INSTR_BEQ_OP: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
+         `INSTR_J_OP:   {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
+      endcase
+   end // end always
 
 endmodule

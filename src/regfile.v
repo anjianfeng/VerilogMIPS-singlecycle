@@ -17,7 +17,9 @@ module regfile( clk, rst, ra, rb, rw, busa, busb, busw, regwr);
        for (i=0; i<32; i=i+1)
          rf[i] = 0;
       end else if (regwr) begin
-         rf[rw] <= busw;
+         // DON'T write $zero
+         if (rw!=0)
+            rf[rw] <= busw;
          `ifdef DEBUG
             $display("R[00-07]=%8X, %8X, %8X, %8X, %8X, %8X, %8X, %8X", 0, rf[1], rf[2], rf[3], rf[4], rf[5], rf[6], rf[7]);
             $display("R[08-15]=%8X, %8X, %8X, %8X, %8X, %8X, %8X, %8X", rf[8], rf[9], rf[10], rf[11], rf[12], rf[13], rf[14], rf[15]);

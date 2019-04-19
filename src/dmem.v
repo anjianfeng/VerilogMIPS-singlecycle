@@ -1,3 +1,7 @@
+// Data memory model
+// Write operate: write data din with address addr on posedge clk
+// Read  operate: read out address addr immediately without clock for supporint Single Cycle MIPS.
+
 module dmem( clk, addr, din, be, wren, dout );
    
    input         clk;
@@ -31,7 +35,7 @@ module dmem( clk, addr, din, be, wren, dout );
 
    // You should write the dmem initial data into dmem.txt in advance.
     initial begin
-    	$readmemh( "dmem.txt" , dmem) ;
+    	$readmemb( "../src/dmem.txt" , dmem) ;
     end
     
 endmodule    
