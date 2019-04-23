@@ -11,7 +11,7 @@ module alu(a, b, aluop, c, compare);
    reg [31:0] c;
    integer    i;
        
-   always @( a or b or aluop ) begin
+   always @( * ) begin
       case ( aluop )
           `ALUOp_NOP:  c = b;                        // NOP
 		      `ALUOp_ADD:  c = a + b;                    // ADD

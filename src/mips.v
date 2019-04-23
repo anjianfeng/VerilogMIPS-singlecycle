@@ -90,9 +90,9 @@ module mips( clk, rst, imem_addr, imem_dout, dmem_addr, dmem_din, dmem_be, dmem_
 
    // Extender
    always @(*) begin
-      imm32 <= {{16{imm16[15]}}, imm16};
+      imm32 = {{16{imm16[15]}}, imm16};
       if (opcode==`INSTR_ORI_OP)
-         imm32 <= {{16{1'b0}}, imm16};
+         imm32 = {{16{1'b0}}, imm16};
    end
 
    // all MUX here

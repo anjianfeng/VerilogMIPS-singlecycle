@@ -15,7 +15,7 @@ module regfile( clk, rst, ra, rb, rw, busa, busb, busw, regwr);
    always @(posedge clk) begin
       if (rst) begin
        for (i=0; i<32; i=i+1)
-         rf[i] = 0;
+         rf[i] <= 0;
       end else if (regwr) begin
          // DON'T write $zero
          if (rw!=0)
