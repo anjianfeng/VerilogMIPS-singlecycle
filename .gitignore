@@ -2,3 +2,4 @@
 /modelsim/*
 !/modelsim/singleCycleMIPS.mpf
 modelsim/singleCycleMIPS.mpf
+*.mpf
