@@ -1,3 +1,4 @@
 ~$*.doc*
 /modelsim/*
 !/modelsim/singleCycleMIPS.mpf
+*.bak
