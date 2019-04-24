@@ -101,13 +101,13 @@ module mips( clk, rst, imem_addr, imem_dout, dmem_addr, dmem_din, dmem_be, dmem_
    assign busw = memtoreg ? dmem_dout:aluout;
 
 
-   always @(*) begin      
+   always @(*) begin 
       case(opcode)
          `INSTR_RTYPE_OP: begin
             case (func)
-               `INSTR_ADDU_FUNCT: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
-               
-               `INSTR_SUBU_FUNCT: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
+               `INSTR_ADDU_FUNCT: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};               
+               `INSTR_SUBU_FUNCT: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};               
+               default: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
             endcase
          end
          `INSTR_ORI_OP: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b0, `EXT_ZERO, 1'b1, `ALUOp_OR, 1'b1, 1'b0};
