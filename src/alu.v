@@ -32,12 +32,6 @@ module alu(a, b, aluop, c, compare);
           `ALUOp_GE0:  c = (a >= 0) ? 32'd1 : 32'd0; // Great than & equal 0
           `ALUOp_LT0:  c = (a <  0) ? 32'd1 : 32'd0; // Less than 0
           `ALUOp_LE0:  c = (a <= 0) ? 32'd1 : 32'd0; // Less than & equal 0
-          `ALUOp_SRA: begin                          // SRA/SRAV
-		          for(i=1; i<=a[4:0]; i=i+1)
-			           c[32-i] = b[31];
-			        for(i=31-a[4:0]; i>=0; i=i-1)
-			           c[i] = b[i+a[4:0]];
-          end                             
           default:   c = 32'd0;                	     // Undefined operation
       endcase
    end // end always
