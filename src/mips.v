@@ -27,7 +27,7 @@ module mips( clk, rst, imem_addr, imem_dout, dmem_addr, dmem_din, dmem_be, dmem_
    wire [4:0] rd;
    wire [15:0] imm16;
    wire [25:0] imm26;
-   reg  [25:0] imm32;
+   reg  [31:0] imm32;
 
    // regfile connection
    wire  [4:0]  rw;
@@ -101,9 +101,7 @@ module mips( clk, rst, imem_addr, imem_dout, dmem_addr, dmem_din, dmem_be, dmem_
    assign busw = memtoreg ? dmem_dout:aluout;
 
 
-   always @(*) begin
-      // set default value
-      {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b0, 1'b0, `EXT_ZERO, 1'b0, `ALUOp_ADDU, 1'b0, 1'b0};
+   always @(*) begin      
       case(opcode)
          `INSTR_RTYPE_OP: begin
             case (func)
@@ -117,6 +115,7 @@ module mips( clk, rst, imem_addr, imem_dout, dmem_addr, dmem_din, dmem_be, dmem_
          `INSTR_SW_OP:  {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
          `INSTR_BEQ_OP: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
          `INSTR_J_OP:   {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b1, 1'b1, `EXT_ZERO, 1'b1, `ALUOp_ADDU, 1'b1, 1'b1};
+			default: {regwr, regdst, extop, alusrc, aluctr, memwr, memtoreg}={1'b0, 1'b0, `EXT_ZERO, 1'b0, `ALUOp_ADDU, 1'b0, 1'b0};
       endcase
    end // end always
 
